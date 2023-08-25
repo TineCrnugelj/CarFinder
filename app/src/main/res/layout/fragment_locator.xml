@@ -18,7 +18,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.339"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/imageView"
+        app:layout_constraintTop_toBottomOf="@+id/compassImg"
         app:layout_constraintVertical_bias="0.499" />
 
     <TextView
@@ -32,14 +32,15 @@
         app:layout_constraintStart_toEndOf="@+id/distanceText" />
 
     <ImageView
-        android:id="@+id/imageView"
+        android:id="@+id/compassImg"
         android:layout_width="248dp"
         android:layout_height="0dp"
+        android:background="@null"
         android:layout_marginTop="33dp"
         android:layout_marginBottom="65dp"
         app:layout_constraintBottom_toTopOf="@+id/distanceText"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:srcCompat="@drawable/compass_needle" />
+        app:srcCompat="@drawable/compass_needle_edited" />
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -11,6 +11,9 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.Animation;
+import android.view.animation.RotateAnimation;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -39,10 +42,10 @@ import com.google.android.gms.tasks.OnSuccessListener;
 */
 
 public class LocatorFragment extends Fragment implements LocationListener {
-    private LocationManager locationManager;
+    SharedPreferences sharedPreferences;
+    private ImageView compassImage;
+    private float currentDegree = 0f;
     View locatorView;
-    private double currentLatitude;
-    private double currentLongitude;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -50,7 +53,7 @@ public class LocatorFragment extends Fragment implements LocationListener {
 
         if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             try {
-                locationManager = (LocationManager) requireContext().getSystemService(Context.LOCATION_SERVICE);
+                LocationManager locationManager = (LocationManager) requireContext().getSystemService(Context.LOCATION_SERVICE);
                 locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 5000, 5, LocatorFragment.this);
             } catch (Exception e) {
                 e.printStackTrace();
@@ -59,20 +62,36 @@ public class LocatorFragment extends Fragment implements LocationListener {
             Toast.makeText(getContext(), "Location permissions not granted!", Toast.LENGTH_SHORT).show();
         }
 
+        sharedPreferences = requireContext().getSharedPreferences("prefs", Context.MODE_PRIVATE);
+        compassImage = locatorView.findViewById(R.id.compassImg);
         return locatorView;
     }
 
-    @Override
-    public void onCreate(@Nullable Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+    private void rotateCompassNeedle(float degrees) {
+        // Create a rotation animation
+        RotateAnimation rotateAnimation = new RotateAnimation(
+                currentDegree,
+                degrees,
+                Animation.RELATIVE_TO_SELF, 0.5f,
+                Animation.RELATIVE_TO_SELF, 0.5f);
+
+        // Set the duration of the animation (in milliseconds)
+        rotateAnimation.setDuration(200);
+
+        // Ensure the animation is not repeated
+        rotateAnimation.setFillAfter(true);
+
+        // Start the animation
+        compassImage.startAnimation(rotateAnimation);
+
+        // Update the current degree to the new angle
+        currentDegree = degrees;
     }
 
     @Override
     public void onLocationChanged(@NonNull Location location) {
-        SharedPreferences sharedPreferences = requireContext().getSharedPreferences("prefs", Context.MODE_PRIVATE);
-
-        currentLatitude = location.getLatitude();
-        currentLongitude = location.getLongitude();
+        double currentLatitude = location.getLatitude();
+        double currentLongitude = location.getLongitude();
         double storedLatitude = sharedPreferences.getFloat("latitude", 0.0f);
         double storedLongitude = sharedPreferences.getFloat("longitude", 0.0f);
         float[] results = new float[1];
@@ -82,6 +101,20 @@ public class LocatorFragment extends Fragment implements LocationListener {
 
         String distanceText = String.format("%.1f m", results[0]);
         distanceTextView.setText(distanceText);
+
+        double deltaLng = storedLongitude - currentLongitude;
+        double bearing = Math.toDegrees(Math.atan2(Math.sin(Math.toRadians(deltaLng)) *
+                        Math.cos(Math.toRadians(storedLatitude)), Math.cos(Math.toRadians(currentLatitude)) *
+                        Math.sin(Math.toRadians(storedLatitude)) - Math.sin(Math.toRadians(currentLatitude)) *
+                        Math.cos(Math.toRadians(storedLatitude)) * Math.cos(Math.toRadians(deltaLng))));
+
+        if (bearing < 0) {
+            bearing += 360;
+        }
+
+        System.out.println(bearing);
+        rotateCompassNeedle((float) bearing);
+        //compassImage.setRotation((float) bearing);
     }
 
     @Override
