@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/fragment_locator"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
@@ -22,6 +21,16 @@
         app:layout_constraintVertical_bias="0.499" />
 
     <TextView
+        android:id="@+id/loadingText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="18dp"
+        android:text="@string/calculatingText"
+        android:textSize="16sp"
+        app:layout_constraintBaseline_toBaselineOf="@+id/distanceText"
+        app:layout_constraintStart_toEndOf="@+id/distanceText" />
+
+    <TextView
         android:id="@+id/distance"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -33,6 +42,7 @@
 
     <ImageView
         android:id="@+id/compassImg"
+        android:contentDescription="@string/compass_needle"
         android:layout_width="248dp"
         android:layout_height="0dp"
         android:layout_marginTop="33dp"
@@ -42,5 +52,5 @@
         app:layout_constraintHorizontal_bias="0.496"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:srcCompat="@drawable/compass_needle_edited" />
+        app:srcCompat="@drawable/compass_needle_white" />
 </androidx.constraintlayout.widget.ConstraintLayout>

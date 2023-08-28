@@ -3,4 +3,6 @@
     <string name="save_location">Save location</string>
     <string name="find_car">Find my car</string>
     <string name="distanceText">Distance:</string>
+    <string name="calculatingText">Calculating…</string>
+    <string name="compass_needle">Compass needle</string>
 </resources>

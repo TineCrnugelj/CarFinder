@@ -2,7 +2,6 @@ package com.example.carfinder;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
-import android.location.LocationListener;
 import android.os.Bundle;
 import android.widget.Toast;
 

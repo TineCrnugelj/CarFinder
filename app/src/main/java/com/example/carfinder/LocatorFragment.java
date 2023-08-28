@@ -6,10 +6,10 @@ import android.Manifest;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
-import android.nfc.Tag;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -22,18 +22,22 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
+import androidx.core.content.res.ResourcesCompat;
 import androidx.fragment.app.Fragment;
-
-import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.tasks.OnSuccessListener;
 
 public class LocatorFragment extends Fragment implements LocationListener {
     SharedPreferences sharedPreferences;
     private ImageView compassImage;
     private float currentDegree = 0f;
     View locatorView;
+
+    private boolean isDarkModeEnabled() {
+        int nightModeFlags =
+                requireContext().getResources().getConfiguration().uiMode &
+                        Configuration.UI_MODE_NIGHT_MASK;
+        return nightModeFlags == Configuration.UI_MODE_NIGHT_YES;
+    }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -52,6 +56,11 @@ public class LocatorFragment extends Fragment implements LocationListener {
 
         sharedPreferences = requireContext().getSharedPreferences("prefs", Context.MODE_PRIVATE);
         compassImage = locatorView.findViewById(R.id.compassImg);
+
+        if (isDarkModeEnabled()) {
+            compassImage.setImageDrawable(ResourcesCompat.getDrawable(getResources(), R.drawable.compass_needle_dark, null));
+        }
+
         return locatorView;
     }
 
@@ -88,6 +97,8 @@ public class LocatorFragment extends Fragment implements LocationListener {
 
         Location.distanceBetween(currentLatitude, currentLongitude, storedLatitude, storedLongitude, results);
         TextView distanceTextView = locatorView.findViewById(R.id.distance);
+        TextView loadingTextView = locatorView.findViewById(R.id.loadingText);
+        loadingTextView.setText("");
 
         String distanceText = String.format("%.1f m", results[0]);
         distanceTextView.setText(distanceText);
