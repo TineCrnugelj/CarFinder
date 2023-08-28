@@ -20,11 +20,11 @@ import android.view.animation.RotateAnimation;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
-
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.res.ResourcesCompat;
 import androidx.fragment.app.Fragment;
+import java.util.Locale;
 
 public class LocatorFragment extends Fragment implements LocationListener {
     SharedPreferences sharedPreferences;
@@ -36,7 +36,29 @@ public class LocatorFragment extends Fragment implements LocationListener {
         int nightModeFlags =
                 requireContext().getResources().getConfiguration().uiMode &
                         Configuration.UI_MODE_NIGHT_MASK;
+
         return nightModeFlags == Configuration.UI_MODE_NIGHT_YES;
+    }
+
+    private void rotateCompassNeedle(float degrees) {
+        RotateAnimation rotateAnimation = new RotateAnimation(
+                currentDegree,
+                degrees,
+                Animation.RELATIVE_TO_SELF, 0.5f,
+                Animation.RELATIVE_TO_SELF, 0.5f);
+
+        rotateAnimation.setDuration(200);
+        rotateAnimation.setFillAfter(true);
+        compassImage.startAnimation(rotateAnimation);
+        currentDegree = degrees;
+    }
+
+    private double bearing(double startLat, double startLng, double endLat, double endLng) {
+        double deltaLng = endLng - startLng;
+        double y = Math.sin(Math.toRadians(deltaLng)) * Math.cos(Math.toRadians(endLat));
+        double x = Math.cos(Math.toRadians(startLat)) * Math.sin(Math.toRadians(endLat)) - Math.sin(Math.toRadians(startLat)) * Math.cos(Math.toRadians(endLat)) * Math.cos(Math.toRadians(deltaLng));
+
+        return (Math.toDegrees(Math.atan2(y, x)) + 360 ) % 360;
     }
 
     @Override
@@ -63,29 +85,6 @@ public class LocatorFragment extends Fragment implements LocationListener {
 
         return locatorView;
     }
-
-    private void rotateCompassNeedle(float degrees) {
-        // Create a rotation animation
-        RotateAnimation rotateAnimation = new RotateAnimation(
-                currentDegree,
-                degrees,
-                Animation.RELATIVE_TO_SELF, 0.5f,
-                Animation.RELATIVE_TO_SELF, 0.5f);
-
-        rotateAnimation.setDuration(200);
-        rotateAnimation.setFillAfter(true);
-        compassImage.startAnimation(rotateAnimation);
-        currentDegree = degrees;
-    }
-
-    private double bearing(double startLat, double startLng, double endLat, double endLng) {
-        double deltaLng = endLng - startLng;
-        double y = Math.sin(Math.toRadians(deltaLng)) * Math.cos(Math.toRadians(endLat));
-        double x = Math.cos(Math.toRadians(startLat)) * Math.sin(Math.toRadians(endLat)) - Math.sin(Math.toRadians(startLat)) * Math.cos(Math.toRadians(endLat)) * Math.cos(Math.toRadians(deltaLng));
-
-        return (Math.toDegrees(Math.atan2(y, x)) + 360 ) % 360;
-    }
-
     @Override
     public void onLocationChanged(@NonNull Location location) {
         double currentLatitude = location.getLatitude();
@@ -100,21 +99,11 @@ public class LocatorFragment extends Fragment implements LocationListener {
         TextView loadingTextView = locatorView.findViewById(R.id.loadingText);
         loadingTextView.setText("");
 
-        String distanceText = String.format("%.1f m", results[0]);
+        String distanceText = String.format(Locale.getDefault(), "%.1f m", results[0]);
         distanceTextView.setText(distanceText);
 
         double bearing = bearing(currentLatitude, currentLongitude, storedLatitude, storedLongitude);
 
         rotateCompassNeedle((float) bearing);
-    }
-
-    @Override
-    public void onProviderEnabled(@NonNull String provider) {
-        LocationListener.super.onProviderEnabled(provider);
-    }
-
-    @Override
-    public void onProviderDisabled(@NonNull String provider) {
-        LocationListener.super.onProviderDisabled(provider);
     }
 }

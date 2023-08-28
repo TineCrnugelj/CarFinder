@@ -28,21 +28,28 @@ public class HomeFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View homeView = inflater.inflate(R.layout.fragment_home, container, false);
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireContext());
+        SharedPreferences sharedPreferences = requireContext().getSharedPreferences("prefs", Context.MODE_PRIVATE);
 
-        // Save current location
+        final Button findCarButton = homeView.findViewById(R.id.find_car_button);
         final Button saveLocationButton = homeView.findViewById(R.id.save_location_button);
+
+        if (!sharedPreferences.getAll().isEmpty()) {
+            findCarButton.setEnabled(true);
+        }
+
         saveLocationButton.setOnClickListener(view -> {
             if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                Toast.makeText(requireContext(), "Saving location, please wait...", Toast.LENGTH_SHORT).show();
                 fusedLocationClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, new CancellationTokenSource().getToken())
                         .addOnSuccessListener(location -> {
                             if (location != null) {
                                 Log.d(TAG, "onSuccess: LAT: " + location.getLatitude());
                                 Log.d(TAG, "onSuccess: LNG: " + location.getLongitude());
-                                SharedPreferences sharedPreferences = requireContext().getSharedPreferences("prefs", Context.MODE_PRIVATE);
                                 SharedPreferences.Editor editor = sharedPreferences.edit();
                                 editor.putFloat("latitude", (float) location.getLatitude());
                                 editor.putFloat("longitude", (float) location.getLongitude());
                                 editor.apply();
+                                findCarButton.setEnabled(true);
                                 Toast.makeText(requireContext(), "Location saved successfully!", Toast.LENGTH_SHORT).show();
                             } else {
                                 Toast.makeText(requireContext(), "Location error!", Toast.LENGTH_SHORT).show();
@@ -53,8 +60,6 @@ public class HomeFragment extends Fragment {
             }
         });
 
-        // Navigate to car locator view
-        final Button findCarButton = homeView.findViewById(R.id.find_car_button);
         findCarButton.setOnClickListener(view -> {
             LocatorFragment locatorFragment = new LocatorFragment();
             FragmentManager fragmentManager = getParentFragmentManager();
