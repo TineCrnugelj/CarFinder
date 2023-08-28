@@ -25,22 +25,6 @@ import androidx.fragment.app.Fragment;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.tasks.OnSuccessListener;
 
-
-/*
-    System.out.println("Stored LAT: " + storedLatitude);
-    System.out.println("Stored LON: " + storedLongitude);
-    System.out.println("Current LAT: " + location.getLatitude());
-    System.out.println("Current LON: " + location.getLongitude());
-
-    Location.distanceBetween(location.getLatitude(), location.getLongitude(), storedLatitude, storedLongitude, results);
-
-
-    TextView distanceTextView = locatorView.findViewById(R.id.distanceText);
-
-    distanceTextView.append(results[0] + "m");
-
-*/
-
 public class LocatorFragment extends Fragment implements LocationListener {
     SharedPreferences sharedPreferences;
     private ImageView compassImage;
@@ -75,16 +59,9 @@ public class LocatorFragment extends Fragment implements LocationListener {
                 Animation.RELATIVE_TO_SELF, 0.5f,
                 Animation.RELATIVE_TO_SELF, 0.5f);
 
-        // Set the duration of the animation (in milliseconds)
         rotateAnimation.setDuration(200);
-
-        // Ensure the animation is not repeated
         rotateAnimation.setFillAfter(true);
-
-        // Start the animation
         compassImage.startAnimation(rotateAnimation);
-
-        // Update the current degree to the new angle
         currentDegree = degrees;
     }
 
@@ -112,9 +89,7 @@ public class LocatorFragment extends Fragment implements LocationListener {
             bearing += 360;
         }
 
-        System.out.println(bearing);
         rotateCompassNeedle((float) bearing);
-        //compassImage.setRotation((float) bearing);
     }
 
     @Override

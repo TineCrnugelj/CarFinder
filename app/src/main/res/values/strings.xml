@@ -2,4 +2,5 @@
     <string name="app_name">CarFinder</string>
     <string name="save_location">Save location</string>
     <string name="find_car">Find my car</string>
+    <string name="distanceText">Distance:</string>
 </resources>
