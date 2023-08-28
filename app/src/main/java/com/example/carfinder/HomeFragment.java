@@ -7,8 +7,6 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Location;
-import android.location.LocationListener;
-import android.location.LocationManager;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -16,29 +14,18 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.Toast;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
-
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.Priority;
+import com.google.android.gms.tasks.CancellationToken;
+import com.google.android.gms.tasks.CancellationTokenSource;
 import com.google.android.gms.tasks.OnSuccessListener;
 
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeoutException;
-
-public class HomeFragment extends Fragment implements LocationListener {
-    private boolean locationUpdateReceived = false;
+public class HomeFragment extends Fragment {
     private FusedLocationProviderClient fusedLocationClient;
-
-    private double latitude;
-    private double longitude;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -51,26 +38,26 @@ public class HomeFragment extends Fragment implements LocationListener {
             @Override
             public void onClick(View view) {
                 if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-                    try {
-                        LocationManager locationManager = (LocationManager) requireContext().getSystemService(Context.LOCATION_SERVICE);
-                        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 5, HomeFragment.this);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
+                    fusedLocationClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, new CancellationTokenSource().getToken())
+                            .addOnSuccessListener(new OnSuccessListener<Location>() {
+                                @Override
+                                public void onSuccess(Location location) {
+                                    if (location != null) {
+                                        Log.d(TAG, "onSuccess: LAT: " + location.getLatitude());
+                                        Log.d(TAG, "onSuccess: LNG: " + location.getLongitude());
+                                        SharedPreferences sharedPreferences = requireContext().getSharedPreferences("prefs", Context.MODE_PRIVATE);
+                                        SharedPreferences.Editor editor = sharedPreferences.edit();
+                                        editor.putFloat("latitude", (float) location.getLatitude());
+                                        editor.putFloat("longitude", (float) location.getLongitude());
+                                        editor.apply();
+                                        Toast.makeText(requireContext(), "Location saved successfully!", Toast.LENGTH_SHORT).show();
+                                    } else {
+                                        Toast.makeText(requireContext(), "Location error!", Toast.LENGTH_SHORT).show();
+                                    }
+                                }
+                            });
                 } else {
                     Toast.makeText(getContext(), "Location permissions not granted!", Toast.LENGTH_SHORT).show();
-                }
-
-                System.out.println("Saved: LAT: " + latitude + " LON: " + longitude);
-                if (locationUpdateReceived) {
-                    SharedPreferences sharedPreferences = requireContext().getSharedPreferences("prefs", Context.MODE_PRIVATE);
-                    SharedPreferences.Editor editor = sharedPreferences.edit();
-                    editor.putFloat("latitude", (float) latitude);
-                    editor.putFloat("longitude", (float) longitude);
-                    editor.apply();
-                    Toast.makeText(requireContext(), "Location saved successfully!", Toast.LENGTH_SHORT).show();
-                } else {
-                    Toast.makeText(requireContext(), "Location not available yet!", Toast.LENGTH_SHORT).show();
                 }
             }
         });
@@ -87,21 +74,5 @@ public class HomeFragment extends Fragment implements LocationListener {
         });
 
         return homeView;
-    }
-    @Override
-    public void onLocationChanged(@NonNull Location location) {
-        latitude = location.getLatitude();
-        longitude = location.getLongitude();
-        locationUpdateReceived = true;
-    }
-
-    @Override
-    public void onProviderEnabled(@NonNull String provider) {
-        LocationListener.super.onProviderEnabled(provider);
-    }
-
-    @Override
-    public void onProviderDisabled(@NonNull String provider) {
-        LocationListener.super.onProviderDisabled(provider);
     }
 }

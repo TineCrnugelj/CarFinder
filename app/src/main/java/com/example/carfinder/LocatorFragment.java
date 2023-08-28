@@ -1,5 +1,7 @@
 package com.example.carfinder;
 
+import static androidx.constraintlayout.motion.utils.Oscillator.TAG;
+
 import android.Manifest;
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -7,7 +9,9 @@ import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.nfc.Tag;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -65,12 +69,21 @@ public class LocatorFragment extends Fragment implements LocationListener {
         currentDegree = degrees;
     }
 
+    private double bearing(double startLat, double startLng, double endLat, double endLng) {
+        double deltaLng = endLng - startLng;
+        double y = Math.sin(Math.toRadians(deltaLng)) * Math.cos(Math.toRadians(endLat));
+        double x = Math.cos(Math.toRadians(startLat)) * Math.sin(Math.toRadians(endLat)) - Math.sin(Math.toRadians(startLat)) * Math.cos(Math.toRadians(endLat)) * Math.cos(Math.toRadians(deltaLng));
+
+        return (Math.toDegrees(Math.atan2(y, x)) + 360 ) % 360;
+    }
+
     @Override
     public void onLocationChanged(@NonNull Location location) {
         double currentLatitude = location.getLatitude();
         double currentLongitude = location.getLongitude();
         double storedLatitude = sharedPreferences.getFloat("latitude", 0.0f);
         double storedLongitude = sharedPreferences.getFloat("longitude", 0.0f);
+        Log.d(TAG, "Stored LAT: " + storedLatitude + " stored LNG: " + storedLongitude);
         float[] results = new float[1];
 
         Location.distanceBetween(currentLatitude, currentLongitude, storedLatitude, storedLongitude, results);
@@ -79,15 +92,7 @@ public class LocatorFragment extends Fragment implements LocationListener {
         String distanceText = String.format("%.1f m", results[0]);
         distanceTextView.setText(distanceText);
 
-        double deltaLng = storedLongitude - currentLongitude;
-        double bearing = Math.toDegrees(Math.atan2(Math.sin(Math.toRadians(deltaLng)) *
-                        Math.cos(Math.toRadians(storedLatitude)), Math.cos(Math.toRadians(currentLatitude)) *
-                        Math.sin(Math.toRadians(storedLatitude)) - Math.sin(Math.toRadians(currentLatitude)) *
-                        Math.cos(Math.toRadians(storedLatitude)) * Math.cos(Math.toRadians(deltaLng))));
-
-        if (bearing < 0) {
-            bearing += 360;
-        }
+        double bearing = bearing(currentLatitude, currentLongitude, storedLatitude, storedLongitude);
 
         rotateCompassNeedle((float) bearing);
     }
