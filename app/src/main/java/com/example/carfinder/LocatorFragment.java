@@ -7,6 +7,10 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -24,12 +28,23 @@ import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.res.ResourcesCompat;
 import androidx.fragment.app.Fragment;
+
+import java.util.Arrays;
 import java.util.Locale;
 
-public class LocatorFragment extends Fragment implements LocationListener {
+public class LocatorFragment extends Fragment implements LocationListener, SensorEventListener {
+
+    private SensorManager sensorManager;
+    private final float[] accelerometerReading = new float[3];
+    private final float[] magnetometerReading = new float[3];
+
+    private final float[] rotationMatrix = new float[9];
+    private final float[] orientationAngles = new float[3];
+
     SharedPreferences sharedPreferences;
     private ImageView compassImage;
     private float currentDegree = 0f;
+    private float azimuthDegrees = 0.0f;
     View locatorView;
 
     private boolean isDarkModeEnabled() {
@@ -64,6 +79,7 @@ public class LocatorFragment extends Fragment implements LocationListener {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         locatorView = inflater.inflate(R.layout.fragment_locator, container, false);
+        sensorManager = (SensorManager) requireContext().getSystemService(Context.SENSOR_SERVICE);
 
         if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             try {
@@ -85,6 +101,30 @@ public class LocatorFragment extends Fragment implements LocationListener {
 
         return locatorView;
     }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+
+        Sensor accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        if (accelerometer != null) {
+            sensorManager.registerListener(this, accelerometer,
+                    SensorManager.SENSOR_DELAY_NORMAL, SensorManager.SENSOR_DELAY_UI);
+        }
+        Sensor magneticField = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
+        if (magneticField != null) {
+            sensorManager.registerListener(this, magneticField,
+                    SensorManager.SENSOR_DELAY_NORMAL, SensorManager.SENSOR_DELAY_UI);
+        }
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+
+        sensorManager.unregisterListener(this);
+    }
+
     @Override
     public void onLocationChanged(@NonNull Location location) {
         double currentLatitude = location.getLatitude();
@@ -105,5 +145,37 @@ public class LocatorFragment extends Fragment implements LocationListener {
         double bearing = bearing(currentLatitude, currentLongitude, storedLatitude, storedLongitude);
 
         rotateCompassNeedle((float) bearing);
+    }
+
+    public void updateOrientationAngles() {
+        // Update rotation matrix, which is needed to update orientation angles.
+        SensorManager.getRotationMatrix(rotationMatrix, null,
+                accelerometerReading, magnetometerReading);
+
+        // "rotationMatrix" now has up-to-date information.
+
+        SensorManager.getOrientation(rotationMatrix, orientationAngles);
+
+        azimuthDegrees = (float) Math.toDegrees(orientationAngles[0]);
+        Log.d(TAG, "Angle: " + Arrays.toString(orientationAngles));
+        // "orientationAngles" now has up-to-date information.
+    }
+
+    @Override
+    public void onSensorChanged(SensorEvent event) {
+        if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
+            System.arraycopy(event.values, 0, accelerometerReading,
+                    0, accelerometerReading.length);
+        } else if (event.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD) {
+            System.arraycopy(event.values, 0, magnetometerReading,
+                    0, magnetometerReading.length);
+        }
+
+        updateOrientationAngles();
+    }
+
+    @Override
+    public void onAccuracyChanged(Sensor sensor, int i) {
+
     }
 }
